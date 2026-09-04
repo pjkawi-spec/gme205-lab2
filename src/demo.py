@@ -9,3 +9,9 @@ print(q.id, q.lon, q.lat)
 
 print(p.distance_to(q))
 
+from spatial import PointSet
+
+a = PointSet.from_csv("data/points.csv")
+print(a.count())
+print(a.bbox())
+print(a.filter_by_tag("poi").count())

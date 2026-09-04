@@ -65,3 +65,42 @@ class Point:
 # ------------------------------------------------------------------
     def is_poi(self): 
         return (self.tag or "").lower() == "poi"
+
+class PointSet:
+    def __init__(self, points: list[Point]): 
+        self.points = points
+# ------------------------------------------------------------------ 
+# Class method (constructing objects from data) 
+# ------------------------------------------------------------------
+    @classmethod 
+    def from_csv(cls, path): 
+        import csv 
+        points = [] 
+        with open(path, newline="") as csvfile: 
+            reader = csv.DictReader(csvfile) 
+            for row in reader: 
+                points.append(Point.from_row(row)) 
+        return cls(points)
+        
+# ------------------------------------------------------------------ 
+# Instance methods (behavior belongs to the object) 
+# ------------------------------------------------------------------ 
+    def count(self): 
+        return len(self.points)
+
+    def bbox(self): 
+        """ 
+        Return the bounding box of the points as a tuple: (min_lon, min_lat, max_lon, max_lat) 
+        """ 
+        min_lon = min(p.lon for p in self.points) 
+        max_lon = max(p.lon for p in self.points) 
+        min_lat = min(p.lat for p in self.points) 
+        max_lat = max(p.lat for p in self.points) 
+        return (min_lon, min_lat, max_lon, max_lat)
+
+    def filter_by_tag(self, tag): 
+        """ 
+        Return a new PointSet containing only points with the given tag. 
+        """ 
+        filtered_points = [p for p in self.points if p.tag == tag] 
+        return PointSet(filtered_points)
