@@ -26,7 +26,7 @@ print("=== DATA INSPECTION REPORT ===")
 # ----------------------------- 
 # B. Print basic information 
 # ----------------------------- 
-num_rows, num_cols = df.shape 
+num_rows, num_cols = df.shape
 
 print("\nBasic Information") 
 print("-----------------") 
