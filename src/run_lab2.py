@@ -16,64 +16,22 @@ PLOT_PATH = os.path.join(OUTPUT_DIR, "lab2_preview.png")
 # A. Read the CSV file 
 # ----------------------------- 
 try: 
-    df = PointSet.from_csv("data/points.csv") 
+    pointset = PointSet.from_csv("data/points.csv") 
 except FileNotFoundError: 
     print(f"Error: Cannot find file at '{DATA_PATH}'.") 
     print("Make sure you have: data/points.csv") 
     raise 
 
-print("=== DATA INSPECTION REPORT ===") 
-# ----------------------------- 
-# B. Print basic information 
-# ----------------------------- 
-num_rows, num_cols = df.shape
-
-print("\nBasic Information") 
-print("-----------------") 
-print(f"Number of rows: {num_rows}") 
-print(f"Number of columns: {num_cols}") 
-print(f"Column names: {list(df.columns)}") 
-
-# ----------------------------- 
-# C. Data quality checks 
-# ----------------------------- 
-print("\nData Quality Checks") 
-print("-------------------") 
-
-missing_values = df.isna().sum() 
-print("Missing values per column:") 
-print(missing_values) 
-
-# Ensure required columns exist 
-required_cols = {"lon", "lat"} 
-if not required_cols.issubset(df.columns): 
-    missing = required_cols - set(df.columns) 
-    raise ValueError(f"Missing required column(s): {missing}. Required: lon, lat")
+num_rows, num_cols = pointset.shape
  
-# Invalid coordinate checks (also catches missing lon/lat as invalid) 
-invalid_lon_mask = df["lon"].isna() | (df["lon"] < -180) | (df["lon"] > 180) 
-invalid_lat_mask = df["lat"].isna() | (df["lat"] < -90) | (df["lat"] > 90) 
-
-invalid_lon_count = int(invalid_lon_mask.sum()) 
-invalid_lat_count = int(invalid_lat_mask.sum()) 
-
-print(f"\nInvalid longitude values (missing or outside -180..180): {invalid_lon_count}") 
-print(f"Invalid latitude values (missing or outside -90..90): {invalid_lat_count}") 
-
-# ----------------------------- 
-# D. Bounding box (valid coords only) 
-# ----------------------------- 
-valid_mask = ~(invalid_lon_mask | invalid_lat_mask) 
-valid_df = df.loc[valid_mask].copy() 
 
 print("\nBounding Box") 
 print("------------") 
 
-if len(valid_df) == 0: 
-    bbox = None 
+if pointset.bbox() is None:
     print("No valid coordinate rows found. Bounding box cannot be computed.") 
 else: 
-    print(valid_df.bbox())  # Print the bounding box of valid coordinates
+    print(pointset.bbox())  # Print the bounding box of valid coordinates
 
 # ----------------------------- 
 # E. Save outputs 
@@ -83,22 +41,14 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # Build summary dictionary 
 summary = { 
-    "file": DATA_PATH, 
-    "rows": int(num_rows), 
-    "columns": int(num_cols), 
-    "column_names": list(df.columns), 
-    "missing_values_per_column": {k: int(v) for k, v in missing_values.items()}, 
-    "invalid_longitude_count": invalid_lon_count, 
-    "invalid_latitude_count": invalid_lat_count, 
-    "valid_coordinate_rows": int(len(valid_df)), 
-    "total_point_count": int(df.count()),
-    "bbox": valid_df.bbox() if len(valid_df) > 0 else None,   
-    "counts_per_tag": {"poi": valid_df.filter_by_tag("poi").count(), 
-                       "school": valid_df.filter_by_tag("school").count(), 
-                       "gate": valid_df.filter_by_tag("gate").count(), 
-                       "building": valid_df.filter_by_tag("building").count(),
-                       "landmark": valid_df.filter_by_tag("landmark").count(),
-                       "road": valid_df.filter_by_tag("road").count()}
+    "total_point_count": int(pointset.count()),
+    "bbox": pointset.bbox(),   
+    "counts_per_tag": {"poi": pointset.filter_by_tag("poi").count(), 
+                       "school": pointset.filter_by_tag("school").count(), 
+                       "gate": pointset.filter_by_tag("gate").count(), 
+                       "building": pointset.filter_by_tag("building").count(),
+                       "landmark": pointset.filter_by_tag("landmark").count(),
+                       "road": pointset.filter_by_tag("road").count()}
 
 } 
 
@@ -111,11 +61,14 @@ print(f"\nSaved summary to: {SUMMARY_PATH}")
 
 # Save scatter plot (valid coords only) 
 plt.figure() 
-if len(valid_df) == 0: 
+if pointset.count() == 0: 
     # Create an empty plot with message in title 
     plt.title("Preview Plot (No valid coordinates to plot)") 
 else: 
-    plt.scatter(valid_df["lon"], valid_df["lat"]) 
+    plt.scatter(
+    [p.lon for p in pointset.points],
+    [p.lat for p in pointset.points]
+) 
     plt.title("UP Diliman Landmarks (lon vs lat)") 
     plt.xlabel("Longitude") 
     plt.ylabel("Latitude") 

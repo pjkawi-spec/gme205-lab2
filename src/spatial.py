@@ -1,4 +1,5 @@
-import math 
+import math
+import pandas as pd
 
 class Point:
     def __init__(self, id, lon, lat, name=None, tag=None): 
@@ -74,15 +75,14 @@ class PointSet:
 # Class method (constructing objects from data) 
 # ------------------------------------------------------------------
     @classmethod 
-    def from_csv(cls, path): 
-        import csv 
-        points = [] 
-        with open(path, newline="") as csvfile: 
-            reader = csv.DictReader(csvfile) 
-            for row in reader: 
-                points.append(Point.from_row(row)) 
-        return cls(points)
-        
+    def from_csv(cls, path: str):
+        df = pd.read_csv(path)
+        points = [Point.from_row(row) for _, row in df.iterrows()]
+
+        pointset = cls(points)
+        pointset.shape = df.shape
+
+        return pointset
 # ------------------------------------------------------------------ 
 # Instance methods (behavior belongs to the object) 
 # ------------------------------------------------------------------ 
@@ -93,6 +93,9 @@ class PointSet:
         """ 
         Return the bounding box of the points as a tuple: (min_lon, min_lat, max_lon, max_lat) 
         """ 
+        if not self.points:
+            return None
+    
         min_lon = min(p.lon for p in self.points) 
         max_lon = max(p.lon for p in self.points) 
         min_lat = min(p.lat for p in self.points) 
